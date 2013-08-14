@@ -1,3 +1,4 @@
+#include "mem.c"
 #include "rimecfg.c"
 #include "front.c"
 

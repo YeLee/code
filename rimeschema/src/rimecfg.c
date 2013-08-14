@@ -1,29 +1,5 @@
 #include "rimecfg.h"
 
-void* tmalloc(size_t i)
-{
-	static int imalloc = 0;
-	if (i == 0) {
-		printf("Allocated:%d\n", imalloc);
-		return NULL;
-	}
-	imalloc ++;
-
-	return malloc(i);
-}
-
-void tfree(void* mem)
-{
-	static int ifree = 0;
-	if (mem == NULL) {
-		printf("Recovered:%d\n", ifree);
-		return;
-	}
-	ifree ++;
-	free(mem);
-	return;
-}
-
 RimeSchemaTable* gethead()
 {
 	RimeSchemaTable* head = NULL;
@@ -31,7 +7,7 @@ RimeSchemaTable* gethead()
 	rimedir = opendir(RIME_DATA_DIR);
 	if (rimedir) {
 		struct dirent* dirinfo = {0};
-		while (dirinfo = readdir(rimedir)) {
+		while ((dirinfo = readdir(rimedir))) {
 			int len = strlen(dirinfo->d_name);
 			if (len > 12 &&
 					!strcmp(".schema.yaml", dirinfo->d_name + len - 12)) {

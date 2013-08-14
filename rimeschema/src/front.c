@@ -1,43 +1,5 @@
 #include "front.h"
 
-char* newstrcat(int num, char* newstart, ...)
-{
-	int len = 0;
-	int i;
-	va_list ap;
-	char* newstr = NULL;
-	char* argstr = NULL;
-
-	if (newstart) len = strlen(newstart);
-
-	va_start(ap, newstart);
-
-		for (i = 1; i < num; i++) {
-			argstr = (char*) va_arg(ap, char*);
-			len += strlen(argstr);
-		}
-
-	va_end(ap);
-	
-	newstr = tmalloc((len + 1) * sizeof(char));
-	memset(newstr, '\0', sizeof(newstr));
-	if (newstart) {
-		strcpy(newstr, newstart);
-		tfree(newstart);
-	}
-
-	va_start(ap, newstart);
-
-		for (i = 1; i < num; i++) {
-			argstr = (char*) va_arg(ap, char*);
-			strcat(newstr, argstr);
-		}
-
-	va_end(ap);
-
-	return newstr;
-}
-
 GtkTreeModel* createmodel(ArgvHandle* handle)
 {
 	GtkListStore* list = gtk_list_store_new(1, G_TYPE_STRING);
@@ -79,7 +41,6 @@ gboolean changed_value(GtkComboBox* combobox, ArgvHandle* handle)
 
 			while(currentauthor) {
 				str = newstrcat(3, str, "\n\t", currentauthor->data);
-				RimeNameList* prevauthor = currentauthor;
 
 				if (currentauthor->next) {
 					currentauthor = currentauthor->next;
@@ -102,6 +63,7 @@ gboolean changed_value(GtkComboBox* combobox, ArgvHandle* handle)
 		}
 
 	}
+	return TRUE;
 }
 
 gboolean initwindow(ArgvHandle* handle)

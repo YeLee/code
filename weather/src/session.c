@@ -45,17 +45,17 @@ int StartSession(ArgInfo* arg)
 	return 1;
 }
 
-void CleanupProc(ArgInfo* arg)
+void CleanupProc(ArgInfo* arg, const int argc)
 {
 	curl_global_cleanup();
-	if (arg->citycode != NULL) tfree(arg->citycode);
+	if ((argc == 4) && (arg->citycode != NULL)) tfree(arg->citycode);
 
 	tmalloc(0);
 	tfree(NULL);
 	return;
 }
 
-int InitProc(ArgInfo* arg, const char* argv[])
+int InitProc(ArgInfo* arg, const int argc, const char* argv[])
 {
 	CURLcode code = curl_global_init(CURL_GLOBAL_ALL) ;
 
@@ -64,10 +64,14 @@ int InitProc(ArgInfo* arg, const char* argv[])
 		return 0;
 	}
 
-	arg->citycode = getcitycode(arg, argv);
-	if (arg->citycode == NULL) {
-		fprintf(stderr, "Error! Can't get citycode.\n");
-		return 0;
+	if (argc == 4) {
+		arg->citycode = getcitycode(arg, argv);
+		if (arg->citycode == NULL) {
+			fprintf(stderr, "Error! Can't get citycode.\n");
+			return 0;
+		}
+	} else {
+		arg->citycode = (char*) argv[0];
 	}
 
 	return 1;

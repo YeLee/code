@@ -36,5 +36,5 @@ char* formatinfo(const ArgInfo* arg);
 
 void EndSession(ArgInfo* arg);
 int StartSession(ArgInfo* arg);
-void CleanupProc(ArgInfo* arg);
-int InitProc(ArgInfo* arg, const char* argv[]);
+void CleanupProc(ArgInfo* arg, const int argc);
+int InitProc(ArgInfo* arg, const int argc, const char* argv[]);

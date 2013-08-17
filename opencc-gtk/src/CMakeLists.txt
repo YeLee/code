@@ -1,0 +1,10 @@
+set(SRC_LIST opencc-gtk.c)
+add_executable(opencc-gtk ${SRC_LIST})
+set(CMAKE_EXE_LINKER_FLAGS
+		"${CMAKE_EXE_LINKER_FLAGS} -lopencc")
+if(USE_GTK3)
+	target_link_libraries(opencc-gtk ${GTK3_LIBRARIES})
+else(NOT USE_GTK3)
+	target_link_libraries(opencc-gtk ${GTK2_LIBRARIES})
+endif(USE_GTK3)
+install(TARGETS opencc-gtk RUNTIME DESTINATION bin)

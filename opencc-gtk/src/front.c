@@ -39,25 +39,24 @@ gboolean combobox_changed(GtkComboBox* combobox, ArgvHandle* handle)
 	return TRUE;
 }
 
-gboolean button_clear_clicked(GtkButton* button, ArgvHandle* handle)
+gboolean button_clicked(GtkButton* button, ArgvHandle* handle)
 {
 	GtkTextIter start = {0}, end = {0};
-
-	gtk_text_buffer_get_bounds(handle->buffer, &start, &end);
-	gtk_text_buffer_delete(handle->buffer, &start, &end);
-	return TRUE;
-}
-
-gboolean button_clip_clicked(GtkButton* button, ArgvHandle* handle)
-{
-	GtkTextIter start = {0}, end = {0};
+	char* name = NULL;
 	char* context = NULL;
 
 	gtk_text_buffer_get_bounds(handle->buffer, &start, &end);
-	context = gtk_text_buffer_get_text(handle->buffer, &start, &end, FALSE);
-	if (strlen(context) <= 0) return FALSE;
 
-	gtk_clipboard_set_text(handle->clipboard, context, -1);
+	if(!strcmp(gtk_widget_get_name(
+					GTK_WIDGET(button)), "clearbutton")) {
+		gtk_text_buffer_delete(handle->buffer, &start, &end);
+	} else if(!strcmp(gtk_widget_get_name(
+					GTK_WIDGET(button)), "clipbutton")) {
+		context = gtk_text_buffer_get_text(handle->buffer,
+				&start, &end, FALSE);
+		if (strlen(context) <= 0) return FALSE;
+		gtk_clipboard_set_text(handle->clipboard, context, -1);
+	}
 	return TRUE;
 }
 
@@ -99,6 +98,7 @@ gboolean initwindow(ArgvHandle* handle)
 	handle->clearbutton =
 		GTK_BUTTON(gtk_button_new_with_label("清空"));
 	if (handle->clearbutton == NULL) return FALSE;
+	gtk_widget_set_name(GTK_WIDGET(handle->clearbutton), "clearbutton");
 
 	#ifdef USE_SELECTION_PRIMARY
 	handle->clipbutton =
@@ -111,6 +111,7 @@ gboolean initwindow(ArgvHandle* handle)
 	#endif
 	if (handle->clipbutton == NULL) return FALSE;
 	if (handle->clipboard == NULL) return FALSE;
+	gtk_widget_set_name(GTK_WIDGET(handle->clipbutton), "clipbutton");
 
 	#ifdef ENABLE_GTK3_SUPPORT
 	handle->subbox = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5));
@@ -137,9 +138,9 @@ gboolean initwindow(ArgvHandle* handle)
 	g_signal_connect(handle->combobox, "changed",
 			G_CALLBACK(combobox_changed), handle);
 	g_signal_connect(handle->clearbutton, "clicked",
-			G_CALLBACK(button_clear_clicked), handle);
+			G_CALLBACK(button_clicked), handle);
 	g_signal_connect(handle->clipbutton, "clicked",
-			G_CALLBACK(button_clip_clicked), handle);
+			G_CALLBACK(button_clicked), handle);
 
 	gtk_container_add(GTK_CONTAINER(handle->mwin), GTK_WIDGET(handle->box));
 	gtk_container_set_border_width(GTK_CONTAINER(handle->mwin), 8);

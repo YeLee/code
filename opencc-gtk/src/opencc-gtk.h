@@ -32,8 +32,7 @@ const char* cfgfile[12] = { "zhs2zht.ini", "zhs2zhtw_vp.ini",
 char* opencc_start(const char* from, int index);
 GtkTreeModel* createmodel(ArgvHandle* handle);
 gboolean combobox_changed(GtkComboBox* combobox, ArgvHandle* handle);
-gboolean button_clear_clicked(GtkButton* button, ArgvHandle* handle);
-gboolean button_clip_clicked(GtkButton* button, ArgvHandle* handle);
+gboolean button_clicked(GtkButton* button, ArgvHandle* handle);
 gboolean initwindow(ArgvHandle* handle);
 
 #endif

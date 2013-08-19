@@ -46,24 +46,17 @@ gboolean combobox_changed(GtkComboBox* combobox, ArgvHandle* handle)
 
 gboolean button_clicked(GtkButton* button, ArgvHandle* handle)
 {
-	char* name = NULL;
+	char* name = (char*) gtk_widget_get_name(GTK_WIDGET(button));
 
-	gtk_text_buffer_get_bounds(
-			handle->buffer, handle->start, handle->end);
+	gtk_text_buffer_get_bounds(handle->buffer, handle->start, handle->end);
 
-	if (!strcmp(gtk_widget_get_name(
-					GTK_WIDGET(button)), "undobutton")) {
-		if (handle->undocontext != NULL) {
-			gtk_text_buffer_set_text(handle->buffer,
-					handle->undocontext, -1);
-			gtk_widget_set_sensitive(GTK_WIDGET(handle->undobutton), FALSE);
-		}
-	} else if (!strcmp(gtk_widget_get_name(
-					GTK_WIDGET(button)), "clearbutton")) {
-		gtk_text_buffer_delete(
-				handle->buffer, handle->start, handle->end);
-	} else if (!strcmp(gtk_widget_get_name(
-					GTK_WIDGET(button)), "clipbutton")) {
+	if (!strcmp(name, "undobutton")) {
+		if (handle->undocontext == NULL) return FALSE;
+		gtk_text_buffer_set_text(handle->buffer, handle->undocontext, -1);
+		gtk_widget_set_sensitive(GTK_WIDGET(handle->undobutton), FALSE);
+	} else if (!strcmp(name, "clearbutton")) {
+		gtk_text_buffer_delete(handle->buffer, handle->start, handle->end);
+	} else if (!strcmp(name, "clipbutton")) {
 		handle->context = gtk_text_buffer_get_text(
 				handle->buffer, handle->start, handle->end, FALSE);
 		if (strlen(handle->context) < 1) return FALSE;
@@ -98,21 +91,19 @@ gboolean initwindow(ArgvHandle* handle)
 	gtk_scrolled_window_set_policy(swin,
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 
-	combobox = GTK_COMBO_BOX(gtk_combo_box_new_with_model
-			(createmodel(handle)));
-	if (combobox == NULL) return FALSE;
-
 	handle->buffer = gtk_text_buffer_new(NULL);
 	if (handle->buffer == NULL) return FALSE;
 
 	view = GTK_TEXT_VIEW(gtk_text_view_new_with_buffer(handle->buffer));
 	if (view == NULL) return FALSE;
-
 	gtk_text_view_set_wrap_mode(view, GTK_WRAP_WORD_CHAR);
+
+	combobox = GTK_COMBO_BOX(gtk_combo_box_new_with_model
+			(createmodel(handle)));
+	if (combobox == NULL) return FALSE;
 
 	renderer = gtk_cell_renderer_text_new();
 	if (renderer == NULL) return FALSE;
-
 	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combobox), renderer, FALSE);
 	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combobox),
 			renderer, "text", TEXT_COLUMN, NULL);
@@ -147,12 +138,12 @@ gboolean initwindow(ArgvHandle* handle)
 	if (subbox == NULL) return FALSE;
 	if (box == NULL) return FALSE;
 
+	gtk_scrolled_window_add_with_viewport(swin, GTK_WIDGET(view));
 	gtk_box_pack_start(subbox, GTK_WIDGET(combobox), TRUE, TRUE, 0);
 	gtk_box_pack_start(subbox,
 			GTK_WIDGET(handle->undobutton), FALSE, FALSE, 0);
 	gtk_box_pack_start(subbox, GTK_WIDGET(clearbutton), FALSE, FALSE, 0);
 	gtk_box_pack_start(subbox, GTK_WIDGET(clipbutton), FALSE, FALSE, 0);
-	gtk_scrolled_window_add_with_viewport(swin, GTK_WIDGET(view));
 
 	gtk_box_pack_start(box, GTK_WIDGET(subbox), FALSE, FALSE, 0);
 	gtk_box_pack_start(box, GTK_WIDGET(swin), TRUE, TRUE, 0);

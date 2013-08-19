@@ -75,6 +75,8 @@ gboolean button_clicked(GtkButton* button, ArgvHandle* handle)
 gboolean initwindow(ArgvHandle* handle)
 {
 	GtkWindow* mwin = NULL;
+	GtkScrolledWindow* swin = NULL;
+	GtkTextView* view = NULL;
 	GtkComboBox* combobox = NULL;
 	GtkCellRenderer* renderer = NULL;
 	GtkButton* clipbutton = NULL;
@@ -91,6 +93,11 @@ gboolean initwindow(ArgvHandle* handle)
 	gtk_window_set_opacity(mwin, 0.9);
 	g_signal_connect(mwin, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
+	swin = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(NULL, NULL));
+	if (swin == NULL) return FALSE;
+	gtk_scrolled_window_set_policy(swin,
+			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+
 	combobox = GTK_COMBO_BOX(gtk_combo_box_new_with_model
 			(createmodel(handle)));
 	if (combobox == NULL) return FALSE;
@@ -98,11 +105,10 @@ gboolean initwindow(ArgvHandle* handle)
 	handle->buffer = gtk_text_buffer_new(NULL);
 	if (handle->buffer == NULL) return FALSE;
 
-	handle->view = GTK_TEXT_VIEW(
-			gtk_text_view_new_with_buffer(handle->buffer));
-	if (handle->view == NULL) return FALSE;
+	view = GTK_TEXT_VIEW(gtk_text_view_new_with_buffer(handle->buffer));
+	if (view == NULL) return FALSE;
 
-	gtk_text_view_set_wrap_mode(handle->view, GTK_WRAP_WORD_CHAR);
+	gtk_text_view_set_wrap_mode(view, GTK_WRAP_WORD_CHAR);
 
 	renderer = gtk_cell_renderer_text_new();
 	if (renderer == NULL) return FALSE;
@@ -146,9 +152,10 @@ gboolean initwindow(ArgvHandle* handle)
 			GTK_WIDGET(handle->undobutton), FALSE, FALSE, 0);
 	gtk_box_pack_start(subbox, GTK_WIDGET(clearbutton), FALSE, FALSE, 0);
 	gtk_box_pack_start(subbox, GTK_WIDGET(clipbutton), FALSE, FALSE, 0);
+	gtk_scrolled_window_add_with_viewport(swin, GTK_WIDGET(view));
 
 	gtk_box_pack_start(box, GTK_WIDGET(subbox), FALSE, FALSE, 0);
-	gtk_box_pack_start(box, GTK_WIDGET(handle->view), TRUE, TRUE, 0);
+	gtk_box_pack_start(box, GTK_WIDGET(swin), TRUE, TRUE, 0);
 
 	g_signal_connect(combobox, "changed",
 			G_CALLBACK(combobox_changed), handle);

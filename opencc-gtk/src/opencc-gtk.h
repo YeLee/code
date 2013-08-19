@@ -8,7 +8,6 @@
 
 #define TEXT_COLUMN 0
 typedef struct _ARGV_HANDLE_ {
-	GtkTextView* view;
 	GtkTextBuffer* buffer;
 	GtkButton* undobutton;
 	GtkClipboard* clipboard;

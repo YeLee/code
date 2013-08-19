@@ -20,12 +20,16 @@ char* opencc_start(const char* from, int index)
 int main(int argc, char* argv[])
 {
 	ArgvHandle handle = {0};
+	static GtkTextIter start = {0};
+	static GtkTextIter end = {0};
+
+	handle.start = &(start);
+	handle.end = &(end);
 	gtk_init(&argc, &argv);
 
-	if (!initwindow(&handle)) {
-		return 1;
-	}
+	if (!initwindow(&handle)) return 1;
 	gtk_main();
 
+	if (handle.undocontext != NULL) free(handle.undocontext);
 	return 0;
 }

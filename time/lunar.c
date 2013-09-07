@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <math.h>
+#include <ctype.h>
 #include "table.h"
 
 #ifndef uint
@@ -24,15 +25,14 @@ uint dayofyear(const uint year, const uint mon, const uint mday)
 	day = monofday[mon - 1] + mday - 1;
 	if ((mon > 2) &&
 			(((year % 4) ==  0) &&
-			((year % 100) != 0) ||
-			((year % 400) == 0)))
+			(((year % 100) != 0) ||
+			((year % 400) == 0))))
 		day++;
 	return day;
 }
 
 uint dayoffset(const uint year, const uint mon, const uint mday)
 {
-	uint offset = 0;
 	uint yday = dayofyear(year, mon, mday);
 	uint dspr = dayofspring(year);
 
@@ -41,6 +41,7 @@ uint dayoffset(const uint year, const uint mon, const uint mday)
 	uint last = dayoffset(year - 1, 12, 31);
 	if (mon == 1) return (last + mday);
 	if (mon == 2) return (last + 31 + mday);
+	return 0;
 }
 
 uint monday(const uint year, const uint dayoffset)
@@ -92,7 +93,7 @@ uint getrealmonday(const uint year, const uint mon, const uint mday)
 	}
 }
 
-uint ganzhi(const uint year, const uint mon, const uint mday)
+void ganzhi(const uint year, const uint mon, const uint mday)
 {
 	static char* tgGB[] = { "甲", "乙", "丙", "丁", "戊",
 		"己", "庚", "辛", "壬", "癸" };
@@ -148,7 +149,8 @@ int isdate(const uint year, const uint mon, const uint mday)
 	if (mon > 12) return 0;
 	if (mon == 2) {
 		if (((year % 4) ==  0) &&
-				((year % 100) != 0) || ((year % 400) == 0)) {
+			(((year % 100) != 0) ||
+			((year % 400) == 0))) {
 			if (mday > 29) return 0;
 			return 1;
 		}

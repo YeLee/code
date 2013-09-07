@@ -10,10 +10,10 @@ typedef unsigned int uint;
 
 uint dayofspring(const uint year)
 {
-	if (((THIS_YEAR(year) & 0x0060) >> 5) == 1)
-		return (THIS_YEAR(year) & 0x001F) - 1;
-	else
-		return (THIS_YEAR(year) & 0x001F) - 1 + 31;
+	if (((THIS_YEAR(year) & 0xC00000) >> 22) == 1)
+		return ((THIS_YEAR(year) & 0x3E0000) >> 17) - 1;
+	else 
+		return ((THIS_YEAR(year) & 0x3E0000) >> 17) - 1 + 31;
 }
 
 uint dayofyear(const uint year, const uint mon, const uint mday)
@@ -22,33 +22,12 @@ uint dayofyear(const uint year, const uint mon, const uint mday)
 		181, 212, 243, 273, 304, 334}; 
 	uint day = 0;
 	day = monofday[mon - 1] + mday - 1;
-	if (((year % 4) ==  0) && (mon > 2) &&
-			((year % 100) != 0) || ((year % 400) == 0))
+	if ((mon > 2) &&
+			(((year % 4) ==  0) &&
+			((year % 100) != 0) ||
+			((year % 400) == 0)))
 		day++;
 	return day;
-}
-
-uint lunardays(const uint year)
-{
-	uint sum = 29 * 12;
-	uint months = 0;
-	uint i = 0;
-	long offset = 0L;
-
-	if (THIS_YEAR(year) & 0xF00000) {
-		months = 13;
-		sum += 29;
-		offset = 0x40L;
-	} else {
-		months = 12;
-		offset = 0x80L;
-	}
-
-	for (i = 1; i <= months; i++) {
-		if ((offset << i) & THIS_YEAR(year)) sum++;
-	}
-
-	return sum;
 }
 
 uint dayoffset(const uint year, const uint mon, const uint mday)
@@ -67,13 +46,15 @@ uint dayoffset(const uint year, const uint mon, const uint mday)
 uint monday(const uint year, const uint dayoffset)
 {
 	uint months = 12;
-	const long lmon = 0x100000L;
 	uint monday = 0;
-	uint leap = ((THIS_YEAR(year) & 0xF00000) >> 20);
+	uint leap = ((THIS_YEAR(year) & 0xF000) >> 12);
+	uint nleap = (THIS_YEAR(year) & 0x10000);
+	uint lmon = 0x1000;
 
 	if (leap) {
 		months = 13;
 		monday |= (leap << 11);
+		monday |= (nleap << 17);
 	}
 
 	uint i = 0;
@@ -81,10 +62,17 @@ uint monday(const uint year, const uint dayoffset)
 
 	for (i = 1; i <= months ; i++)
 	{
-		uint mdays = ((lmon >> i) & THIS_YEAR(year))? 30 : 29;
+		uint mdays = 0;
+		if (!leap || (i != (leap + 1))) {
+			mdays = ((lmon >> i) & THIS_YEAR(year))? 30 : 29;
+		} else {
+			i--;
+			leap = 0;
+			months = 12;
+			mdays = (nleap? 30 : 29);
+			if (left < mdays) i = 0;
+		}
 		if (left < mdays) {
-			if (leap && ((i - 1) == leap)) i = 0;
-			if (leap && (i != 0) && ((i - 1) > leap)) i--;
 			monday |= (i << 6);
 			monday |= left;
 			return monday;
@@ -113,9 +101,10 @@ uint ganzhi(const uint year, const uint mon, const uint mday)
 
 	uint i = 6, j = 8;
 	uint realyear = year;
+	uint lcoffset = ((0x3000000 & THIS_YEAR(year)) >> 24);
 
-	//懒得算春分日了 -_-||
-	if (dayofyear(year, mon, mday) < 34) 
+	//懒得算立春日了 -_-||
+	if (dayofyear(year, mon, mday) < (31 + 2 + lcoffset)) 
 		realyear -= 1;
 
 	uint noun = realyear % 60;
@@ -131,9 +120,9 @@ void printmonday(uint monday)
 	static char numGB[30][9] = { "初一", "初二", "初三", "初四", "初五",
 		"初六", "初七", "初八", "初九", "初十",
 		"十一", "十二", "十三", "十四", "十五",
-		"十六", "十七", "十八", "十九", "廿十",
+		"十六", "十七", "十八", "十九", "二十",
 		"廿一", "廿二", "廿三", "廿四", "廿五",
-		"廿六", "廿七", "廿八", "廿九", "卅十" };
+		"廿六", "廿七", "廿八", "廿九", "三十" };
 	static char monGB[12][9] = { "正月", "二月", "三月", "四月", "五月",
 		"六月", "七月", "八月", "九月", "十月", "冬月", "腊月" };
 	uint mon = ((monday >> 6) & 0xF);
@@ -149,8 +138,33 @@ void printmonday(uint monday)
 
 void usage(char* argv)
 {
-	fprintf(stderr, "%s 年 月 日\n", argv);
+	fprintf(stderr, "%s [%d-%d] [1-12] [1-31]\n", argv,
+			YEAR_SRT, YEAR_SRT + YEAR_NUM - 1);
 	return;
+}
+
+int isdate(const uint year, const uint mon, const uint mday)
+{
+	if (mon > 12) return 0;
+	if (mon == 2) {
+		if (((year % 4) ==  0) &&
+				((year % 100) != 0) || ((year % 400) == 0)) {
+			if (mday > 29) return 0;
+			return 1;
+		}
+		if (mday > 28) return 0;
+		return 1;
+	}
+	if ((mon == 1) || (mon == 3) || (mon == 5) || (mon == 7) || (mon == 8) ||
+			(mon == 10) || (mon == 12)) {
+		if (mday > 31) return 0;
+		return 1;
+	}
+	if ((mon == 2) || (mon == 4) || (mon == 6) || (mon == 9) || (mon == 11)) {
+		if (mday > 30) return 0;
+		return 1;
+	}
+	return 0;
 }
 
 int main(int argc, char* argv[])
@@ -174,15 +188,7 @@ int main(int argc, char* argv[])
 		year = atoi(argv[1]);
 		mon = atoi(argv[2]);
 		mday = atoi(argv[3]);
-		if ((year < YEAR_SRT) || (year > (YEAR_SRT + YEAR_NUM - 1))) {
-			usage(argv[0]);
-			return 1;
-		}
-		if ((mon < 1) || (mon > 12)) {
-			usage(argv[0]);
-			return 1;
-		}
-		if ((mday < 1) || (mday > 31)) {
+		if (!isdate(year, mon, mday)) {
 			usage(argv[0]);
 			return 1;
 		}
@@ -196,6 +202,17 @@ int main(int argc, char* argv[])
 		year = (cur_tm->tm_year) + 1900;
 		mon = (cur_tm->tm_mon) + 1;
 		mday = cur_tm->tm_mday;
+	}
+
+	if ((year < YEAR_SRT) || (year > (YEAR_SRT + YEAR_NUM - 1))) {
+		usage(argv[0]);
+		return 1;
+	}
+
+	if ((year == YEAR_SRT) &&
+			(dayofyear(year, mon, mday) < dayofspring(year))) {
+		usage(argv[0]);
+		return 1;
 	}
 
 	ganzhi(year, mon, mday);

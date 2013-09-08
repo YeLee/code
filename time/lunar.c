@@ -52,7 +52,6 @@ uint monday(const uint year, const uint dayoffset)
 	if (leap) {
 		months = 13;
 		monday |= (leap << 9);
-		monday |= (nleap << 13);
 	}
 
 	uint i = 0;
@@ -73,6 +72,7 @@ uint monday(const uint year, const uint dayoffset)
 		if (left < mdays) {
 			monday |= (i << 5);
 			monday |= left;
+			if (mdays == 30) monday |= 0x2000;
 			return monday;
 		}
 		left -= mdays;
@@ -122,14 +122,16 @@ void printmonday(uint monday)
 		"廿六", "廿七", "廿八", "廿九", "三十" };
 	static char* monGB[] = { "正月", "二月", "三月", "四月", "五月",
 		"六月", "七月", "八月", "九月", "十月", "冬月", "腊月" };
+	static char* bmonGB[] = { "小", "大" };
 	uint mon = ((monday >> 5) & 0xF);
 	uint mday = (monday & 0x1F);
+	uint bmon = ((monday >> 13) & 1);
 
 	if (!mon) {
-		printf("闰%s%s\n", monGB[((monday >> 9) & 0xF) - 1], numGB[mday]);
-	} else {
-		printf("%s%s\n", monGB[mon - 1], numGB[mday]);
+		printf("闰");
+		mon = ((monday >> 9) & 0xF);
 	}
+		printf("%s(%s)%s\n", monGB[mon - 1], bmonGB[bmon], numGB[mday]);
 }
 
 void usage(char* argv)

@@ -13,8 +13,7 @@ uint dayofspring(const uint year)
 {
 	if (((THIS_YEAR(year) & 0xC00000) >> 22) == 1)
 		return ((THIS_YEAR(year) & 0x3E0000) >> 17) - 1;
-	else 
-		return ((THIS_YEAR(year) & 0x3E0000) >> 17) - 1 + 31;
+	return ((THIS_YEAR(year) & 0x3E0000) >> 17) - 1 + 31;
 }
 
 uint dayofyear(const uint year, const uint mon, const uint mday)
@@ -24,9 +23,8 @@ uint dayofyear(const uint year, const uint mon, const uint mday)
 	uint day = 0;
 	day = monofday[mon - 1] + mday - 1;
 	if ((mon > 2) &&
-			(((year % 4) ==  0) &&
-			(((year % 100) != 0) ||
-			((year % 400) == 0))))
+			((((year % 4) == 0) && ((year % 100) != 0)) ||
+			((year % 400) == 0)))
 		day++;
 	return day;
 }
@@ -40,8 +38,7 @@ uint dayoffset(const uint year, const uint mon, const uint mday)
 
 	uint last = dayoffset(year - 1, 12, 31);
 	if (mon == 1) return (last + mday);
-	if (mon == 2) return (last + 31 + mday);
-	return 0;
+	return (last + 31 + mday);
 }
 
 uint monday(const uint year, const uint dayoffset)
@@ -49,13 +46,13 @@ uint monday(const uint year, const uint dayoffset)
 	uint months = 12;
 	uint monday = 0;
 	uint leap = ((THIS_YEAR(year) & 0xF000) >> 12);
-	uint nleap = (THIS_YEAR(year) & 0x10000);
+	uint nleap = ((THIS_YEAR(year) & 0x10000) >> 16);
 	uint lmon = 0x1000;
 
 	if (leap) {
 		months = 13;
-		monday |= (leap << 11);
-		monday |= (nleap << 17);
+		monday |= (leap << 9);
+		monday |= (nleap << 13);
 	}
 
 	uint i = 0;
@@ -74,7 +71,7 @@ uint monday(const uint year, const uint dayoffset)
 			if (left < mdays) i = 0;
 		}
 		if (left < mdays) {
-			monday |= (i << 6);
+			monday |= (i << 5);
 			monday |= left;
 			return monday;
 		}
@@ -88,9 +85,8 @@ uint getrealmonday(const uint year, const uint mon, const uint mday)
 {
 	if (dayofyear(year, mon, mday) >= dayofspring(year)) {
 		return (monday(year, dayoffset(year, mon, mday)));
-	} else {
-		return (monday(year - 1, dayoffset(year, mon, mday)));
 	}
+	return (monday(year - 1, dayoffset(year, mon, mday)));
 }
 
 void ganzhi(const uint year, const uint mon, const uint mday)
@@ -118,23 +114,22 @@ void ganzhi(const uint year, const uint mon, const uint mday)
 
 void printmonday(uint monday)
 {
-	static char numGB[30][9] = { "初一", "初二", "初三", "初四", "初五",
+	static char* numGB[] = { "初一", "初二", "初三", "初四", "初五",
 		"初六", "初七", "初八", "初九", "初十",
 		"十一", "十二", "十三", "十四", "十五",
 		"十六", "十七", "十八", "十九", "二十",
 		"廿一", "廿二", "廿三", "廿四", "廿五",
 		"廿六", "廿七", "廿八", "廿九", "三十" };
-	static char monGB[12][9] = { "正月", "二月", "三月", "四月", "五月",
+	static char* monGB[] = { "正月", "二月", "三月", "四月", "五月",
 		"六月", "七月", "八月", "九月", "十月", "冬月", "腊月" };
-	uint mon = ((monday >> 6) & 0xF);
+	uint mon = ((monday >> 5) & 0xF);
 	uint mday = (monday & 0x1F);
 
 	if (!mon) {
-		printf("闰%s%s\n", monGB[(monday >> 11) - 1], numGB[mday]);
+		printf("闰%s%s\n", monGB[((monday >> 9) & 0xF) - 1], numGB[mday]);
 	} else {
 		printf("%s%s\n", monGB[mon - 1], numGB[mday]);
 	}
-	return;
 }
 
 void usage(char* argv)
@@ -148,9 +143,8 @@ int isdate(const uint year, const uint mon, const uint mday)
 {
 	if (mon > 12) return 0;
 	if (mon == 2) {
-		if (((year % 4) ==  0) &&
-			(((year % 100) != 0) ||
-			((year % 400) == 0))) {
+		if ((((year % 4) ==  0) && ((year % 100) != 0)) ||
+			((year % 400) == 0)) {
 			if (mday > 29) return 0;
 			return 1;
 		}

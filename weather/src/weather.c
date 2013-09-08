@@ -25,7 +25,7 @@ int main(const int argc, const char* argv[])
 	}
 
 	if (argc == 4) {
-		printf("%s %s %s的城市代码是：%s",
+		printf("%s %s %s的城市代码是：%s\n",
 				argv[1], argv[2], argv[3], arg.citycode);
 		return 0;
 	}

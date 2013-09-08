@@ -131,8 +131,8 @@ char* formatinfo(const ArgInfo* arg)
 				day, "日",
 				week[wi->t_week], "\t",
 				wi->temp, "\t",
-				wi->weather, "\t",
-				wi->wind, "\n");
+				wi->wind, "\t",
+				wi->weather, "\n");
 		if (wi->next) {
 			wi = wi->next;
 		} else {

@@ -1,0 +1,50 @@
+#!/bin/bash
+declare -a types
+declare -a fileinfo
+
+i=1
+tempfile=$(mktemp)
+url=$(echo $1 |sed 's=\/\/=##=g' |base64)
+baseurl='http://www.flvxz.com/getFlv.php?url='
+USERAGENT="Mozilla/5.0"
+
+signal_handle()
+{
+        rm $tempfile
+        exit $1
+}
+trap signal_handle SIGHUP SIGINT SIGQUIT SIGABRT SIGKILL SIGALRM SIGTERM
+
+wget -q "${baseurl}${url}" -O $tempfile
+sed -i 's=\(<\/\w\+>\)=\1\n=g' $tempfile
+
+[ -z "$(grep '<span style="color:red">' $tempfile)" ] &&
+	echo -e "\e[1;31m错误！找不到匹配结果！\e[0m" && signal_handle -1
+
+types=( $(grep -Po '(?<=<span style="color:red">\[).*(?=]</span>)' ${tempfile}) )
+
+echo -e "\e[1;34m找到${#types[@]}个匹配结果：\e[0m"
+for res in ${types[@]}
+do
+	echo -e "\e[1;31m[${i}]\e[0m${res}"
+	let "i++"
+done
+echo -ne "\e[1;35m请选择匹配的视频：\e[0m"
+read -t 15 choice
+
+[ -z "$choice" ] && choice=1;
+[ -z "${types[choice-1]}" ] && choice=1;
+
+ncount=$(grep -A1 -P "<span style=\"color:red\">\[${types[choice-1]}]</span>" $tempfile |grep -oP '(?<=分割为 <span style="color:red;">).*(?=</span>)')
+[ -z "$ncount" ] && ncount=1
+
+fileinfo=($(grep -v -e "flvxz\.com" -e "^<[/a-z]*>$" -e "^$" $tempfile |grep -A$((3*ncount+2)) -P "<span style=\"color:red\">\[${types[choice-1]}]</span>" |grep -oP '(?<=<a href=").*(?=</a>)' |tr ' ' '/'))
+for line in ${fileinfo[@]}
+do
+	filename=$(echo -e ${line} |tr '/' ' ' |grep -oP '(?<=">).*')
+	fileurl=$(echo $line |grep -oP 'http:.*(?=">)')
+	notify-send "正在播放：${filename}"
+	mplayer -user-agent "${USERAGENT}" "${fileurl}"
+done
+
+signal_handle 0

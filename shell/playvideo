@@ -1,50 +1,125 @@
 #!/bin/bash
+
+[ $# -ne 1 ] && echo -e "\e[1;31mUsage: $0 url\e[0m" 1>&2 && exit 1
+[ -z $(echo "$1" |grep "^http.*$") ] && \
+	echo -e "\e[1;31mUsage: $0 url\e[0m" 1>&2 && exit 1
+
 declare -a types
 declare -a fileinfo
 
-i=1
 tempfile=$(mktemp)
-url=$(echo $1 |sed 's=\/\/=##=g' |base64)
-baseurl='http://www.flvxz.com/getFlv.php?url='
 USERAGENT="Mozilla/5.0"
+INPUTTIMEOUT=10
 
 signal_handle()
 {
-        rm $tempfile
-        exit $1
+	rm $tempfile
+	exit $1
 }
 trap signal_handle SIGHUP SIGINT SIGQUIT SIGABRT SIGKILL SIGALRM SIGTERM
 
-wget -q "${baseurl}${url}" -O $tempfile
-sed -i 's=\(<\/\w\+>\)=\1\n=g' $tempfile
+play_file()
+{
+	[ -z "$(echo $2 |grep -P '^\w+://.+$')" ] && return 1
+	notify-send "正在播放：${1}"
 
-[ -z "$(grep '<span style="color:red">' $tempfile)" ] &&
+	if [ -z "$(echo $2 |grep -P '.+\.m3u8')" ]
+	then
+		mplayer -user-agent "${USERAGENT}" "${2}"
+	else
+		mplayer -user-agent "${USERAGENT}" -playlist "${2}"
+	fi
+	return 0
+}
+
+use_flvcd()
+{
+	types=("normal" "high" "super" "real")
+	baseurl='http://www.flvcd.com/parse.php?format='
+	echo -e "\e[1;34mFLVCD支持的画质：\e[0m"
+	echo -e "\e[1;31m[1]\e[0m标清版"
+	echo -e "\e[1;31m[2]\e[0m高清版"
+	echo -e "\e[1;31m[3]\e[0m超清版"
+	echo -e "\e[1;31m[4]\e[0m原画版"
+	echo -ne "\e[1;35m请选择合适的画质：\e[0m"
+	read -t ${INPUTTIMEOUT} choice
+
+	[ -z "$choice" ] && choice=1;
+	[ -z "${types[choice-1]}" ] && choice=1;
+
+	wget -q --user-agent="$USERAGENT" "${baseurl}${types[choice - 1]}&kw=${1}"\
+		-O - |iconv -f gb2312 -o $tempfile
+	[ -z "$(grep 'onclick' $tempfile)" ] && return 1
+
+	ncount=$(grep -oP "(?<=自动切割的<font color=red>)\d*" $tempfile)
+
+	filename=$(grep -oP '(?<=document.title = ")[^"]*(?=")' $tempfile)
+
+	if [ -z "$ncount" ]
+	then
+		fileinfo=($(grep -oP '(?<=clipurl = ")[^"]*(?=")' $tempfile))
+		play_file "${filename}" "${fileinfo}"
+		return 0
+	fi
+
+	fileinfo=($(grep -oP '(?<=name="inf" value=").*(?=")' $tempfile \
+		|sed 's=|=\n=g'))
+	i=1
+	for fileurl in ${fileinfo[@]}
+	do
+		play_file "${filename}-${i}" "${fileurl}"
+		let "i++"
+	done
+
+	return 0
+}
+
+use_flvxz()
+{
+	url=$(echo $1 |sed 's=\/\/=##=g' |base64)
+	baseurl='http://www.flvxz.com/getFlv.php?url='
+
+	wget -q --user-agent="$USERAGENT" "${baseurl}${url}" -O $tempfile
+	sed -i 's=\(<\/\w\+>\)=\1\n=g' $tempfile
+
+	[ -z "$(grep '<span style="color:red">' $tempfile)" ] && return 1
+	types=( $(grep -oP '(?<=<span style="color:red">\[).*(?=]</span>)' \
+		${tempfile}) )
+
+	echo -e "\e[1;34m找到${#types[@]}个匹配结果：\e[0m"
+
+	i=1
+	for res in ${types[@]}
+	do
+		echo -e "\e[1;31m[${i}]\e[0m${res}"
+		let "i++"
+	done
+	echo -ne "\e[1;35m请选择匹配的视频：\e[0m"
+	read -t ${INPUTTIMEOUT} choice
+
+	[ -z "$choice" ] && choice=1;
+	[ -z "${types[choice-1]}" ] && choice=1;
+
+	ncount=$(grep -A1 -P \
+		"<span style=\"color:red\">\[${types[choice-1]}]</span>" $tempfile | \
+		grep -oP '(?<=分割为 <span style="color:red;">).*(?=</span>)')
+	[ -z "$ncount" ] && ncount=1
+
+	fileinfo=($(grep -v -e "flvxz\.com" -e "^<[/a-z]*>$" -e "^$" $tempfile | \
+		grep -A$((3*ncount+2)) -P \
+		"<span style=\"color:red\">\[${types[choice-1]}]</span>" | \
+		grep -oP '(?<=<a href=").*(?=</a>)' |tr ' ' '/'))
+
+	for line in ${fileinfo[@]}
+	do
+		filename=$(echo -e ${line} |tr '/' ' ' |grep -oP '(?<=">).*')
+		fileurl=$(echo $line |grep -oP 'http:.*(?=">)')
+		play_file "${filename}" "${fileurl}"
+	done
+	return 0
+}
+
+use_flvxz $1 || use_flvcd $1 || \
 	echo -e "\e[1;31m错误！找不到匹配结果！\e[0m" && signal_handle -1
-
-types=( $(grep -Po '(?<=<span style="color:red">\[).*(?=]</span>)' ${tempfile}) )
-
-echo -e "\e[1;34m找到${#types[@]}个匹配结果：\e[0m"
-for res in ${types[@]}
-do
-	echo -e "\e[1;31m[${i}]\e[0m${res}"
-	let "i++"
-done
-echo -ne "\e[1;35m请选择匹配的视频：\e[0m"
-read -t 15 choice
-
-[ -z "$choice" ] && choice=1;
-[ -z "${types[choice-1]}" ] && choice=1;
-
-ncount=$(grep -A1 -P "<span style=\"color:red\">\[${types[choice-1]}]</span>" $tempfile |grep -oP '(?<=分割为 <span style="color:red;">).*(?=</span>)')
-[ -z "$ncount" ] && ncount=1
-
-fileinfo=($(grep -v -e "flvxz\.com" -e "^<[/a-z]*>$" -e "^$" $tempfile |grep -A$((3*ncount+2)) -P "<span style=\"color:red\">\[${types[choice-1]}]</span>" |grep -oP '(?<=<a href=").*(?=</a>)' |tr ' ' '/'))
-for line in ${fileinfo[@]}
-do
-	filename=$(echo -e ${line} |tr '/' ' ' |grep -oP '(?<=">).*')
-	fileurl=$(echo $line |grep -oP 'http:.*(?=">)')
-	notify-send "正在播放：${filename}"
-	mplayer -user-agent "${USERAGENT}" "${fileurl}"
-done
 
 signal_handle 0

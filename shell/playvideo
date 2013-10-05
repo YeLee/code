@@ -1,7 +1,8 @@
 #!/bin/bash
 
-[ $# -ne 1 ] && echo -e "\e[1;31mUsage: $0 url\e[0m" 1>&2 && exit 1
-[ -z $(echo "$1" |grep "^http.*$") ] && \
+[ $# -ne 1 ] && \
+	echo -e "\e[1;31mUsage: $0 url\e[0m" 1>&2 && exit 1
+[ -z "$(echo $1 |grep -P '^\w+://.+$')" ] && \
 	echo -e "\e[1;31mUsage: $0 url\e[0m" 1>&2 && exit 1
 
 declare -a types
@@ -20,14 +21,14 @@ trap signal_handle SIGHUP SIGINT SIGQUIT SIGABRT SIGKILL SIGALRM SIGTERM
 
 play_file()
 {
-	[ -z "$(echo $2 |grep -P '^\w+://.+$')" ] && return 1
-	notify-send "正在播放：${1}"
+	[ -z "$(echo $3 |grep -P '^\w+://.+$')" ] && return 1
+	notify-send -a mplayer -i mplayer "找到${2}个文件" "正在播放：${1}"
 
-	if [ -z "$(echo $2 |grep -P '.+\.m3u8')" ]
+	if [ -z "$(echo $3 |grep -P '.+\.m3u8')" ]
 	then
-		mplayer -user-agent "${USERAGENT}" "${2}"
+		mplayer -user-agent "${USERAGENT}" "${3}"
 	else
-		mplayer -user-agent "${USERAGENT}" -playlist "${2}"
+		mplayer -user-agent "${USERAGENT}" -playlist "${3}"
 	fi
 	return 0
 }
@@ -51,23 +52,22 @@ use_flvcd()
 		-O - |iconv -f gb2312 -o $tempfile
 	[ -z "$(grep 'onclick' $tempfile)" ] && return 1
 
-	ncount=$(grep -oP "(?<=自动切割的<font color=red>)\d*" $tempfile)
-
+	ncount=$(grep -oP '(?<=自动切割的<font color=red>)\d*' $tempfile)
 	filename=$(grep -oP '(?<=document.title = ")[^"]*(?=")' $tempfile)
 
 	if [ -z "$ncount" ]
 	then
 		fileinfo=($(grep -oP '(?<=clipurl = ")[^"]*(?=")' $tempfile))
-		play_file "${filename}" "${fileinfo}"
+		play_file "${filename}" 1 "${fileinfo}"
 		return 0
 	fi
 
-	fileinfo=($(grep -oP '(?<=name="inf" value=").*(?=")' $tempfile \
-		|sed 's=|=\n=g'))
+	fileinfo=( $(grep -oP '(?<=name="inf" value=").*(?=")' $tempfile \
+		|sed 's=|=\n=g') )
 	i=1
 	for fileurl in ${fileinfo[@]}
 	do
-		play_file "${filename}-${i}" "${fileurl}"
+		play_file "${filename}_${i}" "${ncount}" "${fileurl}" || continue
 		let "i++"
 	done
 
@@ -105,7 +105,7 @@ use_flvxz()
 		grep -oP '(?<=分割为 <span style="color:red;">).*(?=</span>)')
 	[ -z "$ncount" ] && ncount=1
 
-	fileinfo=($(grep -v -e "flvxz\.com" -e "^<[/a-z]*>$" -e "^$" $tempfile | \
+	fileinfo=($(grep -v -e 'flvxz\.com' -e '^<[/a-z]*>$' -e '^$' $tempfile | \
 		grep -A$((3*ncount+2)) -P \
 		"<span style=\"color:red\">\[${types[choice-1]}]</span>" | \
 		grep -oP '(?<=<a href=").*(?=</a>)' |tr ' ' '/'))
@@ -113,8 +113,8 @@ use_flvxz()
 	for line in ${fileinfo[@]}
 	do
 		filename=$(echo -e ${line} |tr '/' ' ' |grep -oP '(?<=">).*')
-		fileurl=$(echo $line |grep -oP 'http:.*(?=">)')
-		play_file "${filename}" "${fileurl}"
+		fileurl=$(echo $line |grep -oP '\w+://.*(?=">)')
+		play_file "${filename}" "${ncount}" "${fileurl}"
 	done
 	return 0
 }

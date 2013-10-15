@@ -35,13 +35,14 @@ play_file()
 
 use_flvcd()
 {
-	types=("normal" "high" "super" "real")
+	types=("fluent" "normal" "high" "super" "real")
 	baseurl='http://www.flvcd.com/parse.php?format='
 	echo -e "\e[1;34mFLVCD支持的画质：\e[0m"
-	echo -e "\e[1;31m[1]\e[0m标清版"
-	echo -e "\e[1;31m[2]\e[0m高清版"
-	echo -e "\e[1;31m[3]\e[0m超清版"
-	echo -e "\e[1;31m[4]\e[0m原画版"
+	echo -e "\e[1;31m[1]\e[0m流畅版"
+	echo -e "\e[1;31m[2]\e[0m标清版"
+	echo -e "\e[1;31m[3]\e[0m高清版"
+	echo -e "\e[1;31m[4]\e[0m超清版"
+	echo -e "\e[1;31m[5]\e[0m原画版"
 	echo -ne "\e[1;35m请选择合适的画质：\e[0m"
 	read -t ${INPUTTIMEOUT} choice
 

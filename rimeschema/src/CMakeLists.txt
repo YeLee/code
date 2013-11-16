@@ -1,4 +1,4 @@
-set(SRC_LIST rimeschema.c)
+set(SRC_LIST front.c rimecfg.c rimeschema.c)
 if(NOT NOLIBYAML)
 	set(CMAKE_EXE_LINKER_FLAGS
 		"${CMAKE_EXE_LINKER_FLAGS} -L${PROJECT_BINARY_DIR}/lib/yaml -lyaml")

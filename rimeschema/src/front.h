@@ -1,19 +1,10 @@
 #ifndef FRONT_H
 #define FRONT_H
 
-#include <gtk/gtk.h>
-
+#include "rimeschema.h"
 #define TEXT_COLUMN 0
-typedef struct _ARGV_HANDLE_ {
-	GtkWindow* mwin;
-	GtkComboBox* combobox;
-	GtkLabel* label;
-	GtkBox* box;
-	GtkCellRenderer* renderer;
-	RimeSchemaTable* head;
-} ArgvHandle;
 
-char* newstrcat(int num, char* newstart, ...);
+char* get_rimedirname();
 GtkTreeModel* createmodel(ArgvHandle* handle);
 gboolean changed_value(GtkComboBox* combobox, ArgvHandle* handle);
 gboolean initwindow(ArgvHandle* handle);

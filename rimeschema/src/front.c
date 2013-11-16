@@ -1,5 +1,18 @@
 #include "front.h"
 
+char* get_rimedirname()
+{
+	char* rimedirname = NULL;
+	GtkFileChooser* filechooser = GTK_FILE_CHOOSER(gtk_file_chooser_dialog_new("Rime Schema List",
+			NULL, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+			GTK_STOCK_CANCEL,  GTK_RESPONSE_CANCEL,
+			GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT, NULL));
+	if (gtk_dialog_run(GTK_DIALOG(filechooser)) == GTK_RESPONSE_ACCEPT)
+		rimedirname = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filechooser));
+	gtk_widget_destroy(GTK_WIDGET(filechooser));
+	return rimedirname;
+}
+
 GtkTreeModel* createmodel(ArgvHandle* handle)
 {
 	GtkListStore* list = gtk_list_store_new(1, G_TYPE_STRING);

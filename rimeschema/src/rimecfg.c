@@ -1,10 +1,18 @@
 #include "rimecfg.h"
 
-RimeSchemaTable* gethead()
+#ifdef NOLIBYAML
+#include <yaml/api.c>
+#include <yaml/scanner.c>
+#include <yaml/reader.c>
+#else
+#include <yaml/yaml_private.h>
+#endif
+
+RimeSchemaTable* gethead(char* rimedirname)
 {
 	RimeSchemaTable* head = NULL;
 	DIR* rimedir;
-	rimedir = opendir(RIME_DATA_DIR);
+	rimedir = opendir(rimedirname);
 	if (rimedir) {
 		struct dirent* dirinfo = {0};
 		while ((dirinfo = readdir(rimedir))) {
@@ -12,7 +20,7 @@ RimeSchemaTable* gethead()
 			if (len > 12 &&
 					!strcmp(".schema.yaml", dirinfo->d_name + len - 12)) {
 				char* file = newstrcat(4, NULL,
-						RIME_DATA_DIR, "/", dirinfo->d_name);
+						rimedirname, "/", dirinfo->d_name);
 				head = (RimeSchemaTable *) savelist(POINTLIST(head),
 						getschemainfo(file));
 				tfree(file);

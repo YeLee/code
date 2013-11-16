@@ -1,13 +1,14 @@
 #include "mem.c"
-#include "rimecfg.c"
-#include "front.c"
+#include "rimecfg.h"
+#include "front.h"
 
 int main(int argc, char* argv[])
 {
 	ArgvHandle handle = {0};
-	handle.head = gethead();
+	char* rimedirname;
 	gtk_init(&argc, &argv);
-
+	if ( (rimedirname = get_rimedirname()) == NULL) return 0;
+	handle.head = gethead(rimedirname);
 	if (!initwindow(&handle)) {
 		freelist(handle.head);
 		return 1;
@@ -15,6 +16,7 @@ int main(int argc, char* argv[])
 	gtk_main();
 
 	freelist(handle.head);
+	g_free(rimedirname);
 	tmalloc(0);
 	tfree(NULL);
 	return 0;

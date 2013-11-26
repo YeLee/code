@@ -1,9 +1,9 @@
 #ifndef HAD_MEM_C
 #define HAD_MEM_C
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include "mem.h"
 
 char* ui2str(const unsigned int i)
 {

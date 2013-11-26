@@ -1,3 +1,4 @@
+#include "func.h"
 #define HTTP_SUCCESS 200
 
 size_t writefunc(void *ptr, size_t size, size_t nmemb, void* userdata)

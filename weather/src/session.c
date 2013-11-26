@@ -1,3 +1,6 @@
+#include "func.h"
+#include "session.h"
+
 
 void EndSession(ArgInfo* arg)
 {

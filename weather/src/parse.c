@@ -1,4 +1,6 @@
 #include <ctype.h>
+#include <string.h>
+#include "func.h"
 
 unsigned short daysum(json_object* obj)
 {

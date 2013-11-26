@@ -1,8 +1,5 @@
 #include "weather.h"
-#include "curl.c"
-#include "static.c"
-#include "parse.c"
-#include "session.c"
+#include "session.h"
 
 void usage(const char* argv)
 {

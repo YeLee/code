@@ -1,7 +1,8 @@
+#ifndef WEATHER_H
+#define WEATHER_H
 #include <curl/curl.h>
-#include <time.h>
-#include "mem.c"
-#include "json.c"
+#include <json-c/json.h>
+#include "mem.h"
 
 typedef struct _WEATHER_INFO_ {
 	int index;
@@ -26,15 +27,4 @@ typedef struct _ARG_INFO_ {
 	WeatherInfo* weather;
 } ArgInfo;
 
-int getfile(const char* url, ArgInfo* arg);
-
-char* getcitycode(ArgInfo* arg, const char* argv[]);
-
-unsigned short daysum(json_object* obj);
-int parseinfo(ArgInfo* arg);
-char* formatinfo(const ArgInfo* arg);
-
-void EndSession(ArgInfo* arg);
-int StartSession(ArgInfo* arg);
-void CleanupProc(ArgInfo* arg, const int argc);
-int InitProc(ArgInfo* arg, const int argc, const char* argv[]);
+#endif

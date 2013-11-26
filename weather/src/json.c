@@ -1,7 +1,8 @@
 #ifndef HAD_JSON_C
 #define HAD_JSON_C
-#include <json/json.h>
+
 #include <string.h>
+#include "func.h"
 
 #define obj2obj(x) json_object_get_object(x)
 #define obj2str(x) json_object_get_string(x)

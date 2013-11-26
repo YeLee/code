@@ -1,3 +1,4 @@
+#include "func.h"
 
 char* getcode(ArgInfo* arg, const char* match, const char* url)
 {

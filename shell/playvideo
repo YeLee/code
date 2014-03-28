@@ -78,16 +78,16 @@ use_flvcd()
 use_flvxz()
 {
 	url=$(echo $1 |sed 's=\/\/=##=g' |base64)
-	baseurl='http://www.flvxz.com/getFlv.php?url='
+	baseurl='http://api.flvxz.com/url/'
 
 	wget -q --user-agent="$USERAGENT" "${baseurl}${url}" -O $tempfile
-	sed -i 's=\(<\/\w\+>\)=\1\n=g' $tempfile
+	sed -i 's=\(<\/video>\)=\1\n=g' $tempfile
 
-	[ -z "$(grep '<span style="color:red">' $tempfile)" ] && return 1
-	types=( $(grep -oP '(?<=<span style="color:red">\[).*(?=]</span>)' \
-		${tempfile}) )
+	types=( $(grep -oP \
+	'(?<=<quality><\!\[CDATA\[).*(?=\]\]\>\<\/quality\>)' $tempfile) )
+	[[ ${#types[@]} -eq 0 ]] && return 1
 
-	echo -e "\e[1;34m找到${#types[@]}个匹配结果：\e[0m"
+	echo -e "\e[1;34mFLVXZ找到${#types[@]}个匹配结果：\e[0m"
 
 	i=1
 	for res in ${types[@]}
@@ -101,20 +101,27 @@ use_flvxz()
 	[ -z "$choice" ] && choice=1;
 	[ -z "${types[choice-1]}" ] && choice=1;
 
-	ncount=$(grep -A1 -P \
-		"<span style=\"color:red\">\[${types[choice-1]}]</span>" $tempfile | \
-		grep -oP '(?<=分割为 <span style="color:red;">).*(?=</span>)')
-	[ -z "$ncount" ] && ncount=1
+	choicetype="${types[choice-1]}"
+	res=$(grep -P \
+	"\<quality\>\<\!\[CDATA\[${choicetype}\]\]\>\<\/quality\>" $tempfile)
+	filetitle=$(echo -e $res |grep -oP \
+	"(?<=\<title\>\<\!\[CDATA\[).*(?=\]\]\>\<\/title\>)")
 
-	fileinfo=($(grep -v -e 'flvxz\.com' -e '^<[/a-z]*>$' -e '^$' $tempfile | \
-		grep -A$((3*ncount+2)) -P \
-		"<span style=\"color:red\">\[${types[choice-1]}]</span>" | \
-		grep -oP '(?<=<a href=").*(?=</a>)' |tr ' ' '/'))
+	types=( $(echo $res |sed -e 's=.*<files>\(.*\)<\/files>.*=\1=g' \
+		-e 's=\(<\/file>\)=\n=g') )
+	ncount=${#types[@]}
 
-	for line in ${fileinfo[@]}
+	i=0
+	while [[ $i < $ncount ]]
 	do
-		filename=$(echo -e ${line} |tr '/' ' ' |grep -oP '(?<=">).*')
-		fileurl=$(echo $line |grep -oP '\w+://.*(?=">)')
+		let "i++"
+		res=${types[i-1]}
+		filetype=$(echo $res |grep -oP "(?<=\<ftype\>).*(?=\<\/ftype\>)")
+		index=""
+		[[ $ncount -ne 1 ]] && index=-${i}
+		filename=${filetitle}${index}.${filetype}
+		fileurl=$(echo $res |grep -oP \
+			"(?<=\<furl\>\<\!\[CDATA\[).*(?=\]\]\>\<\/furl\>)")
 		play_file "${filename}" "${ncount}" "${fileurl}"
 	done
 	return 0

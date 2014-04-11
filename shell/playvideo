@@ -112,11 +112,12 @@ use_flvxz()
 	ncount=${#types[@]}
 
 	i=0
-	while [[ $i < $ncount ]]
+	while [[ $i -lt $ncount ]]
 	do
 		let "i++"
 		res=${types[i-1]}
 		filetype=$(echo $res |grep -oP "(?<=\<ftype\>).*(?=\<\/ftype\>)")
+		[[ -z "$filetype" ]] && filetype="mp4"
 		index=""
 		[[ $ncount -ne 1 ]] && index=-${i}
 		filename=${filetitle}${index}.${filetype}
